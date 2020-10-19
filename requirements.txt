@@ -1,0 +1,4 @@
+tensorflow==2.1.2
+tensorflow_datasets==4.0.1
+matplotlib
+IPython
