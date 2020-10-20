@@ -2,3 +2,8 @@ tensorflow==2.1.2
 tensorflow_datasets==4.0.1
 matplotlib
 IPython
+opencv-python==4.4.0
+gluoncv==0.8.0
+mxnet==1.7.0.post1
+Cython==0.29.21
+pycocotools==2.0.2

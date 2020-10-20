@@ -54,6 +54,7 @@ class DecodePredictions(tf.keras.layers.Layer):
         return boxes_transformed
 
     def call(self, images, predictions):
+
         image_shape = tf.cast(tf.shape(images), dtype=tf.float32)
         anchor_boxes = self._anchor_box.get_anchors(image_shape[1], image_shape[2])
         box_predictions = predictions[:, :, :4]

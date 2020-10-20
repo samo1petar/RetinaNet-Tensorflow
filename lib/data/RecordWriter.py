@@ -11,11 +11,11 @@ from lib.tools.progress_bar import printProgressBar
 class RecordWriter:
     def __init__(
             self,
-            data_path           : str = '/media/david/A/Dataset/COCO',  # TODO change data path
-            record_dir          : str = None,
-            record_name         : str = None,
-            save_n_test_images  : int = None,
-            save_n_train_images : int = None,
+            data_path           : str,
+            record_dir          : str,
+            record_name         : str,
+            save_n_test_images  : int,
+            save_n_train_images : int,
     ):
         assert os.path.exists(record_dir)
         assert record_name
