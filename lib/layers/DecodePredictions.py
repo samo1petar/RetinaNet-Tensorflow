@@ -21,7 +21,7 @@ class DecodePredictions(tf.keras.layers.Layer):
 
     def __init__(
         self,
-        num_classes=80,
+        num_classes=12,
         confidence_threshold=0.05,
         nms_iou_threshold=0.5,
         max_detections_per_class=100,
