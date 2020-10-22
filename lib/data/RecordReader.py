@@ -84,7 +84,7 @@ class RecordReader:
                 ],
                 axis=-1,
             )
-            # bbox = convert_to_xywh(bbox)
+            bbox = convert_to_xywh(bbox)
             class_ids = tf.cast(class_ids, dtype=tf.int32)
 
             return image, bbox, class_ids
