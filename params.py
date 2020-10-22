@@ -3,6 +3,7 @@ import tensorflow as tf
 
 from lib.data.RecordReader import RecordReader
 from lib.data.RecordWriter import RecordWriter
+from lib.data.RecordWriterHippo import RecordWriterHippo
 from lib.LabelEncoder import LabelEncoder
 from lib.feature_extractor.backbone import get_backbone
 from lib.loss.RetinaNetLoss import RetinaNetLoss
@@ -15,21 +16,22 @@ class Params:
     records = 'records'
     results = 'results'
 
-    record_name = 'first_record'
+    record_name = 'hippo_ten'
 
-    model_dir = 'models_one_image' # TODO used for callback, should be dependent on each train
+    model_dir = 'models_hippo_ten' # TODO used for callback, should be dependent on each train
 
     label_encoder = LabelEncoder()
 
-    num_classes = 81 # 80 + junk class
-    batch_size = 1
+    num_classes = 12
+    batch_size = 3
 
-    record_writer = RecordWriter(
+    record_writer = RecordWriterHippo(
         data_path           = dataset,
         record_dir          = records,
         record_name         = record_name,
+        annotations         = '/media/david/A/Datasets/PlayHippo/detections.json',
         save_n_test_images  = 1,
-        save_n_train_images = 1,
+        save_n_train_images = 10,
     )
     record_reader = RecordReader(
         record_dir           = records,
@@ -42,8 +44,9 @@ class Params:
         prefatch_buffer_size = 1,
     )
 
-    learning_rates = [2.5e-06, 0.000625, 0.00125, 0.0025, 0.00025, 2.5e-05]
-    learning_rate_boundaries = [125, 250, 500, 240000, 360000]
+    # learning_rates = [2.5e-06, 0.000625, 0.00125, 0.0025, 0.00025, 2.5e-05]
+    learning_rates = [0.0025, 0.00125, 0.000625, 0.0003125]
+    learning_rate_boundaries = [125, 250, 2000]
     learning_rate_fn = tf.optimizers.schedules.PiecewiseConstantDecay(
         boundaries=learning_rate_boundaries, values=learning_rates
     )

@@ -6,12 +6,13 @@ from lib.layers.DecodePredictions import DecodePredictions
 from lib.image import resize_and_pad_image
 from lib.visualize import visualize_detections
 from lib.data.classes import classes
+from lib.data.hippo_classes import cls_ids
 
 from params import Params as p
 
 
 # Change this to `model_dir` when not using the downloaded weights
-weights_dir = "models_one_image"
+weights_dir = p.model_dir
 
 latest_checkpoint = tf.train.latest_checkpoint(weights_dir)
 
@@ -32,7 +33,11 @@ def prepare_image(image):
 
 train_dataset = p.record_reader.read_record('train')
 
+i = 0
+
 for input_image, _ in train_dataset:
+    if i >= 10: break
+    i += 1
     input_image = tf.cast(input_image, dtype=tf.float32)
 
     prediction = model(input_image, training=False)
@@ -40,6 +45,7 @@ for input_image, _ in train_dataset:
 
     num_detections = detections.valid_detections[0]
 
+    classes = {str(value): key for key, value in cls_ids.items()}
     class_names = [classes[str(int(x))] for x in detections.nmsed_classes[0][:num_detections].numpy()]
 
     input_image = input_image[0].numpy()
@@ -51,4 +57,3 @@ for input_image, _ in train_dataset:
         class_names,
         detections.nmsed_scores[0][:num_detections],
     )
-    break

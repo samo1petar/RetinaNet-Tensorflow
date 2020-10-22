@@ -1,7 +1,7 @@
 from lib.visualize import visualize_detections
 import numpy as np
 import cv2
-from lib.data.classes import classes
+from lib.data.hippo_classes import cls_ids
 from lib.LabelEncoder import LabelEncoder
 from IPython import embed
 from lib.data.RecordReader import RecordReader
@@ -14,7 +14,7 @@ def show(image):
 
 record_reader = RecordReader(
         record_dir           = 'records',
-        record_name          = 'first_record',
+        record_name          = 'hippo_ten',
         label_encoder        = LabelEncoder(),
         batch_size           = 1,
         shuffle_buffer       = 1,
@@ -25,20 +25,24 @@ record_reader = RecordReader(
 
 train_dataset = record_reader.read_record('train')
 
+i = 0
 for image, bbox, cls in train_dataset:
+    if i >= 10: break
+    i += 1
+
     image = (image[0].numpy() * 255).astype(np.uint8)
     bbox = bbox.numpy()
     cls = cls.numpy()
-    break
 
-class_names = [classes[str(int(x))] for x in cls[0]]
+    classes = {str(value): key for key, value in cls_ids.items()}
+    class_names = [classes[str(int(x))] for x in cls[0]]
 
-visualize_detections(
-        image,
-        bbox[0],
-        class_names,
-        [1] * len(class_names),
-    )
+    visualize_detections(
+            image,
+            bbox[0],
+            class_names,
+            [1] * len(class_names),
+        )
 
 '''
 [[191.48436 , 206.31874 , 381.61874 , 178.025   ],
