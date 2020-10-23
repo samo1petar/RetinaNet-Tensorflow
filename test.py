@@ -14,7 +14,7 @@ def show(image):
 
 record_reader = RecordReader(
         record_dir           = 'records',
-        record_name          = 'hippo_ten',
+        record_name          = 'hippo',
         label_encoder        = LabelEncoder(),
         batch_size           = 1,
         shuffle_buffer       = 1,
@@ -23,11 +23,11 @@ record_reader = RecordReader(
         prefatch_buffer_size = 1,
     )
 
-train_dataset = record_reader.read_record('train')
+train_dataset = record_reader.read_record('test')
 
 i = 0
 for image, bbox, cls in train_dataset:
-    if i >= 10: break
+    if i >= 50: break
     i += 1
 
     image = (image[0].numpy() * 255).astype(np.uint8)

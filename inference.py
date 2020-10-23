@@ -2,11 +2,11 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-from lib.layers.DecodePredictions import DecodePredictions
-from lib.image import resize_and_pad_image
-from lib.visualize import visualize_detections
-from lib.data.classes import classes
 from lib.data.hippo_classes import cls_ids
+from lib.image import resize_and_pad_image
+from lib.layers.DecodePredictions import DecodePredictions
+from lib.tools.file import choose_one_from_dir, choose_model
+from lib.visualize import visualize_detections
 
 from params import Params as p
 
@@ -14,9 +14,14 @@ from params import Params as p
 # Change this to `model_dir` when not using the downloaded weights
 weights_dir = p.model_dir
 
-latest_checkpoint = tf.train.latest_checkpoint(weights_dir)
-
 model = p.model
+
+# experiment = choose_one_from_dir('models')
+# model_path = choose_model(experiment)
+#
+# model.load_weights(model_path)
+
+latest_checkpoint = tf.train.latest_checkpoint('/home/david/Projects/RetinaNet-Tensorflow/models/2020-10-23_16-27-56')
 model.load_weights(latest_checkpoint)
 
 # image = tf.keras.Input(shape=[None, None, 3], name="image")
@@ -31,12 +36,12 @@ def prepare_image(image):
     image = tf.keras.applications.resnet.preprocess_input(image)
     return tf.expand_dims(image, axis=0), ratio
 
-train_dataset = p.record_reader.read_record('train')
+train_dataset = p.record_reader.read_record('test')
 
 i = 0
 
 for input_image, _ in train_dataset:
-    if i >= 10: break
+    if i >= 100: break
     i += 1
     input_image = tf.cast(input_image, dtype=tf.float32)
 
