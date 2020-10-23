@@ -89,6 +89,21 @@ class RecordReader:
 
             return image, bbox, class_ids
 
+        def augment(image, bbox, class_ids):
+
+            image_2 = tf.image.random_brightness(image, 0.2)
+            image_2 = tf.image.random_hue(image_2, 0.2)
+            image_2 = tf.image.random_contrast(image_2, 0.0, 0.3)
+            image_2 = tf.image.random_saturation(image_2, 2, 10)
+
+            image = tf.cond(
+                tf.random.uniform([], 0, 2, dtype=tf.int32),
+                true_fn=lambda: image,
+                false_fn=lambda: image_2,
+            )
+
+            return image, bbox, class_ids
+
         if name == 'test':
             batch_size = 1
             count = 1
@@ -101,7 +116,8 @@ class RecordReader:
         dataset = tf.data.TFRecordDataset(full_record_name, num_parallel_reads=self._num_parallel_reads)
         dataset = dataset.map(parse, num_parallel_calls=self._num_parallel_calls)
         dataset = dataset.map(process, num_parallel_calls=self._num_parallel_calls)
-        # dataset = dataset.batch(batch_size)
+        # if name == 'train':
+        #     dataset = dataset.map(augment, num_parallel_calls=self._num_parallel_calls)
         dataset = dataset.shuffle(self._shuffle_buffer)
         dataset = dataset.padded_batch(batch_size=batch_size, padding_values=(0.0, 1e-8, -1), drop_remainder=True)
         dataset = dataset.map(self._label_encoder.encode_batch, num_parallel_calls=autotune)
