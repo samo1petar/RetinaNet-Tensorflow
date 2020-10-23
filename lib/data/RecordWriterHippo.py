@@ -51,7 +51,7 @@ class RecordWriterHippo:
             if max is not None and i >= max:
                 break
 
-            image = cv2.imread(annotation['path'])
+            image = cv2.imread(annotation['path'][0])
 
             if image.shape[1] > 900:
                 image = cv2.resize(image, (900, int(900 * image.shape[0] / image.shape[1])))
