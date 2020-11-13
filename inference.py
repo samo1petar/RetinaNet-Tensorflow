@@ -41,7 +41,7 @@ train_dataset = p.record_reader.read_record('test')
 i = 0
 
 for input_image, _ in train_dataset:
-    if i >= 100: break
+    if i >= 30: break
     i += 1
     input_image = tf.cast(input_image, dtype=tf.float32)
 

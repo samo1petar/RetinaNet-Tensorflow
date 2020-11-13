@@ -5,7 +5,7 @@ from lib.data.RecordReader import RecordReader
 from lib.data.RecordWriter import RecordWriter
 from lib.data.RecordWriterHippo import RecordWriterHippo
 from lib.LabelEncoder import LabelEncoder
-from lib.feature_extractor.backbone import get_backbone
+from lib.feature_extractor.backbone import get_backbone, get_backbone_MobileNet_v2, get_backbone_conv_small
 from lib.loss.RetinaNetLoss import RetinaNetLoss
 from lib.model.RetinaNet import RetinaNet
 from lib.tools.time import get_time
@@ -19,12 +19,12 @@ class Params:
 
     record_name = 'hippo'
 
-    model_dir = 'models/' + get_time()
+    model_dir = 'models/' + get_time() + '_separate_losses'
 
     label_encoder = LabelEncoder()
 
     num_classes = 12
-    batch_size = 1
+    batch_size = 4
 
     record_writer = RecordWriterHippo(
         data_path           = dataset,
@@ -39,10 +39,10 @@ class Params:
         record_name          = record_name,
         label_encoder        = label_encoder,
         batch_size           = batch_size,
-        shuffle_buffer       = 100,
-        num_parallel_calls   = 8,
-        num_parallel_reads   = 8,
-        prefatch_buffer_size = 100,
+        shuffle_buffer       = 20,
+        num_parallel_calls   = 4,
+        num_parallel_reads   = 4,
+        prefatch_buffer_size = 20,
     )
 
     # learning_rates = [2.5e-06, 0.000625, 0.00125, 0.0025, 0.00025, 2.5e-05]
@@ -52,9 +52,9 @@ class Params:
         boundaries=learning_rate_boundaries, values=learning_rates
     )
 
-    resnet50_backbone = get_backbone()
+    backbone = get_backbone()
     loss_fn = RetinaNetLoss(num_classes)
-    model = RetinaNet(num_classes, resnet50_backbone)
+    model = RetinaNet(num_classes, backbone, feature_pyramid_channels=256)
 
     optimizer = tf.optimizers.SGD(learning_rate=learning_rate_fn, momentum=0.9)
     model.compile(loss=loss_fn, optimizer=optimizer)
@@ -66,5 +66,6 @@ class Params:
             save_best_only=False,
             save_weights_only=True,
             verbose=1,
-        )
+        ),
+        tf.keras.callbacks.TensorBoard(log_dir=model_dir),
     ]

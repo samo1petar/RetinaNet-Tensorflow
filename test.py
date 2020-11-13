@@ -1,3 +1,4 @@
+import tensorflow as tf
 from lib.visualize import visualize_detections
 import numpy as np
 import cv2
@@ -29,6 +30,8 @@ i = 0
 for image, bbox, cls in train_dataset:
     if i >= 50: break
     i += 1
+
+    print (image.shape)
 
     image = (image[0].numpy() * 255).astype(np.uint8)
     bbox = bbox.numpy()

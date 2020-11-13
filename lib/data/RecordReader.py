@@ -84,6 +84,25 @@ class RecordReader:
                 ],
                 axis=-1,
             )
+
+            def rot_bbox(bbox, height):
+                return tf.stack((
+                    tf.cast(height, tf.float32) - bbox[..., 3], bbox[..., 0],
+                    tf.cast(height, tf.float32) - bbox[..., 1], bbox[..., 2],
+                ), axis=-1)
+
+            rot = tf.random.uniform([], 0, 4, dtype=tf.int32)
+            bbox = tf.switch_case(
+                rot, branch_fns={
+                    0: lambda: bbox,
+                    1: lambda: rot_bbox(rot_bbox(rot_bbox(bbox, tf.shape(image)[0]), tf.shape(image)[1]), tf.shape(image)[0]),
+                    2: lambda: rot_bbox(rot_bbox(bbox, tf.shape(image)[0]), tf.shape(image)[1]),
+                    3: lambda: rot_bbox(bbox, tf.shape(image)[0]),
+                }, default=None,
+            )
+
+            image = tf.image.rot90(image, k=rot)
+
             bbox = convert_to_xywh(bbox)
             class_ids = tf.cast(class_ids, dtype=tf.int32)
 
@@ -96,13 +115,11 @@ class RecordReader:
             image_2 = tf.image.random_contrast(image_2, 0.0, 0.3)
             image_2 = tf.image.random_saturation(image_2, 2, 10)
 
-            image = tf.cond(
-                tf.random.uniform([], 0, 2, dtype=tf.int32),
-                true_fn=lambda: image,
-                false_fn=lambda: image_2,
+            image = tf.case([(tf.cast(tf.random.uniform([], 0, 2, dtype=tf.int32), dtype=tf.bool), lambda: image)],
+                default=lambda: image_2,
             )
 
-            return image, bbox, class_ids
+            return image_2, bbox, class_ids
 
         if name == 'test':
             batch_size = 1
@@ -115,7 +132,7 @@ class RecordReader:
 
         dataset = tf.data.TFRecordDataset(full_record_name, num_parallel_reads=self._num_parallel_reads)
         dataset = dataset.map(parse, num_parallel_calls=self._num_parallel_calls)
-        dataset = dataset.map(process, num_parallel_calls=self._num_parallel_calls)
+        # dataset = dataset.map(process, num_parallel_calls=self._num_parallel_calls)
         if name == 'train':
             dataset = dataset.map(augment, num_parallel_calls=self._num_parallel_calls)
         dataset = dataset.shuffle(self._shuffle_buffer)
@@ -127,82 +144,3 @@ class RecordReader:
         dataset = dataset.prefetch(buffer_size=self._prefatch_buffer_size)
 
         return dataset
-
-        # for images, labels in dataset:
-        #     yield images, labels
-
-
-        # for index, class_ids, bbox_x1, bbox_y1, bbox_x2, bbox_y2, image in iter(dataset):
-        #
-        #     # B = image[..., 0]
-        #     # G = image[..., 1]
-        #     # R = image[..., 2]
-        #     #
-        #     # image = tf.stack((R, G, B), axis=-1)
-        #
-        #     image, image_shape, ratio = resize_and_pad_image(image[0], min_side=300, max_side=800, jitter=None)
-        #
-        #     image = image / 255
-        #
-        #     image = tf.expand_dims(image, axis=0)
-        #
-        #     bbox = tf.concat(
-        #         (tf.transpose(bbox_x1), tf.transpose(bbox_y1),
-        #          tf.transpose(bbox_x2), tf.transpose(bbox_y2)),
-        #         axis=1,
-        #     )
-        #
-        #     bbox = tf.stack(
-        #         [
-        #             bbox[:, 0] * ratio,
-        #             bbox[:, 1] * ratio,
-        #             bbox[:, 2] * ratio,
-        #             bbox[:, 3] * ratio,
-        #         ],
-        #         axis=-1,
-        #     )
-        #     bbox = convert_to_xywh(bbox)
-        #
-        #     class_ids = class_ids[0]
-        #
-        #
-        #     # ############################################
-        #     # def show(image):
-        #     #     import cv2
-        #     #     cv2.imshow('', image)
-        #     #     cv2.waitKey()
-        #     #     cv2.destroyAllWindows()
-        #     #
-        #     # bbox_np = bbox.numpy()
-        #     #
-        #     # import numpy as np
-        #     # import cv2
-        #     # image_np = (image[0].numpy() * 255).astype(np.uint8)
-        #     #
-        #     # isClosed = True
-        #     # color = (255, 0, 0)
-        #     # thickness = 2
-        #     # for x, y, w, h in bbox_np:
-        #     #     # points = np.array([
-        #     #     #     [x1, y1],
-        #     #     #     [x1, y2],
-        #     #     #     [x2, y2],
-        #     #     #     [x2, y1],
-        #     #     # ], np.int32).reshape((-1, 1, 2))
-        #     #     points = np.array([
-        #     #         [x   - w/2, y   - h/2],
-        #     #         [x+w - w/2, y   - h/2],
-        #     #         [x+w - w/2, y+h - h/2],
-        #     #         [x   - w/2, y+h - h/2],
-        #     #     ], np.int32).reshape((-1, 1, 2))
-        #     #     image_np = cv2.polylines(image_np, [points], isClosed, color, thickness)
-        #     #
-        #     # print ('Record Reader')
-        #     # from IPython import embed
-        #     # embed()
-        #     # exit()
-        #     # ############################################
-        #
-        #     # yield index, class_ids, bbox, image
-        #
-        #     yield image, bbox, class_ids

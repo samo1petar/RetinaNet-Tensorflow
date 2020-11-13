@@ -14,9 +14,9 @@ class RetinaNet(tf.keras.Model):
         Currently supports ResNet50 only.
     """
 
-    def __init__(self, num_classes, backbone=None, **kwargs):
+    def __init__(self, num_classes, backbone, feature_pyramid_channels, **kwargs):
         super(RetinaNet, self).__init__(name="RetinaNet", **kwargs)
-        self.fpn = FeaturePyramid(backbone)
+        self.fpn = FeaturePyramid(backbone, channels=feature_pyramid_channels)
         self.num_classes = num_classes
 
         prior_probability = tf.constant_initializer(-np.log((1 - 0.01) / 0.01))
@@ -28,6 +28,7 @@ class RetinaNet(tf.keras.Model):
         N = tf.shape(image)[0]
         cls_outputs = []
         box_outputs = []
+
         for feature in features:
             box_outputs.append(tf.reshape(self.box_head(feature), [N, -1, 4]))
             cls_outputs.append(
