@@ -52,9 +52,9 @@ class Params:
         boundaries=learning_rate_boundaries, values=learning_rates
     )
 
-    backbone = get_backbone()
+    backbone = get_backbone_conv_small()
     loss_fn = RetinaNetLoss(num_classes)
-    model = RetinaNet(num_classes, backbone, feature_pyramid_channels=256)
+    model = RetinaNet(num_classes, backbone, feature_pyramid_channels=8, head_channels=8, head_depth=2)
 
     optimizer = tf.optimizers.SGD(learning_rate=learning_rate_fn, momentum=0.9)
     model.compile(loss=loss_fn, optimizer=optimizer)

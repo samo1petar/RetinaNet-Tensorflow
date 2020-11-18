@@ -11,17 +11,24 @@ class RetinaNet(tf.keras.Model):
     Attributes:
       num_classes: Number of classes in the dataset.
       backbone: The backbone to build the feature pyramid from.
-        Currently supports ResNet50 only.
     """
 
-    def __init__(self, num_classes, backbone, feature_pyramid_channels, **kwargs):
+    def __init__(
+            self,
+            num_classes,
+            backbone,
+            feature_pyramid_channels,
+            head_channels,
+            head_depth,
+            **kwargs
+    ):
         super(RetinaNet, self).__init__(name="RetinaNet", **kwargs)
         self.fpn = FeaturePyramid(backbone, channels=feature_pyramid_channels)
         self.num_classes = num_classes
 
         prior_probability = tf.constant_initializer(-np.log((1 - 0.01) / 0.01))
-        self.cls_head = build_head(9 * num_classes, prior_probability)
-        self.box_head = build_head(9 * 4, "zeros")
+        self.cls_head = build_head(9 * num_classes, prior_probability, channels=head_channels, depth=head_depth)
+        self.box_head = build_head(9 * 4, "zeros", channels=head_channels, depth=head_depth)
 
     def call(self, image, training=False):
         features = self.fpn(image, training=training)
