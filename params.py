@@ -5,7 +5,7 @@ from lib.data.RecordReader import RecordReader
 from lib.data.RecordWriter import RecordWriter
 from lib.data.RecordWriterHippo import RecordWriterHippo
 from lib.LabelEncoder import LabelEncoder
-from lib.feature_extractor.backbone import get_backbone, get_backbone_MobileNet_v2, get_backbone_conv_small
+from lib.feature_extractor.backbone import get_backbone, get_backbone_MobileNet_v2, get_backbone_conv_small, get_backbone_conv_basic
 from lib.loss.RetinaNetLoss import RetinaNetLoss
 from lib.model.RetinaNet import RetinaNet
 from lib.tools.time import get_time
@@ -19,7 +19,7 @@ class Params:
 
     record_name = 'hippo'
 
-    model_dir = 'models/' + get_time() + '_separate_losses'
+    model_dir = 'models/' + get_time() + '_separate_losses_3xcls_small_FE'
 
     label_encoder = LabelEncoder()
 
@@ -45,8 +45,9 @@ class Params:
         prefatch_buffer_size = 20,
     )
 
+    lr_rate = 1
     # learning_rates = [2.5e-06, 0.000625, 0.00125, 0.0025, 0.00025, 2.5e-05]
-    learning_rates = [0.0025 * batch_size, 0.00125 * batch_size, 0.000625 * batch_size, 0.0003125 * batch_size]
+    learning_rates = [0.0025 * batch_size * lr_rate, 0.00125 * batch_size * lr_rate, 0.000625 * batch_size * lr_rate, 0.0003125 * batch_size * lr_rate]
     learning_rate_boundaries = [125, 250, 2000]
     learning_rate_fn = tf.optimizers.schedules.PiecewiseConstantDecay(
         boundaries=learning_rate_boundaries, values=learning_rates

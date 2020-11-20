@@ -2,7 +2,20 @@ import os
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+  try:
+    for gpu in gpus:
+      tf.config.experimental.set_memory_growth(gpu, True)
+  except RuntimeError as e:
+    print(e)
+
 from params import Params as p
+from shutil import copyfile
+
+if not os.path.exists(p.model_dir):
+    os.mkdir(p.model_dir)
+copyfile('params.py', os.path.join(p.model_dir, 'params.py'))
 
 model = p.model
 
@@ -11,24 +24,13 @@ record_reader = p.record_reader
 train_dataset = record_reader.read_record('train')
 val_dataset = record_reader.read_record('test')
 
-# epochs = 3
-#
-# model.fit(
-#     train_dataset.take(100),
-#     validation_data=train_dataset.take(10),
-#     epochs=epochs,
-#     callbacks=p.callbacks_list,
-#     verbose=1,
-# )
-
-
 # @tf.function
 def train_step(input, labels):
     with tf.GradientTape() as tape:
         tape.watch(model.trainable_variables)
         prediction = model(input, training=True)
         clf_loss, box_loss = p.loss_fn(labels, prediction)
-        loss = clf_loss + box_loss
+        loss = clf_loss * 3 + box_loss
 
     gradients = tape.gradient(loss, model.trainable_variables)
 

@@ -1,5 +1,6 @@
 import tensorflow as tf
 from lib.feature_extractor.basic_feature_extractor import BasicFE
+from lib.feature_extractor.small_basic_feature_extractor import SmallBasicFE
 
 
 def get_backbone():
@@ -30,8 +31,19 @@ def get_backbone_MobileNet_v2():
         inputs=[backbone.inputs], outputs=[block_5_add, block_11_project_BN, out_relu]
     )
 
-def get_backbone_conv_small():
+def get_backbone_conv_basic():
     basic_fe = BasicFE(name='basic_feature_extractor')
+
+    inputs = tf.keras.Input(shape=[None, None, 3], name="inputs")
+
+    x1, x2, x3 = basic_fe(inputs)
+
+    return tf.keras.Model(
+        inputs=[basic_fe.input], outputs=[x1, x2, x3]
+    )
+
+def get_backbone_conv_small():
+    basic_fe = SmallBasicFE(name='small_basic_feature_extractor')
 
     inputs = tf.keras.Input(shape=[None, None, 3], name="inputs")
 

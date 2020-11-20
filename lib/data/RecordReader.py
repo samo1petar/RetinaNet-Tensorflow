@@ -132,7 +132,7 @@ class RecordReader:
 
         dataset = tf.data.TFRecordDataset(full_record_name, num_parallel_reads=self._num_parallel_reads)
         dataset = dataset.map(parse, num_parallel_calls=self._num_parallel_calls)
-        # dataset = dataset.map(process, num_parallel_calls=self._num_parallel_calls)
+        dataset = dataset.map(process, num_parallel_calls=self._num_parallel_calls)
         if name == 'train':
             dataset = dataset.map(augment, num_parallel_calls=self._num_parallel_calls)
         dataset = dataset.shuffle(self._shuffle_buffer)
