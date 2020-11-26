@@ -19,7 +19,7 @@ class Params:
 
     record_name = 'hippo'
 
-    model_dir = 'models/' + get_time() + '_separate_losses_3xcls_small_FE'
+    model_dir = 'models/' + get_time()
 
     label_encoder = LabelEncoder()
 
@@ -53,9 +53,9 @@ class Params:
         boundaries=learning_rate_boundaries, values=learning_rates
     )
 
-    backbone = get_backbone_conv_small()
+    backbone = get_backbone()
     loss_fn = RetinaNetLoss(num_classes)
-    model = RetinaNet(num_classes, backbone, feature_pyramid_channels=8, head_channels=8, head_depth=2)
+    model = RetinaNet(num_classes, backbone, feature_pyramid_channels=256, head_channels=256, head_depth=4)
 
     optimizer = tf.optimizers.SGD(learning_rate=learning_rate_fn, momentum=0.9)
     model.compile(loss=loss_fn, optimizer=optimizer)
