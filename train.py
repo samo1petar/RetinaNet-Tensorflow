@@ -24,13 +24,13 @@ record_reader = p.record_reader
 train_dataset = record_reader.read_record('train')
 val_dataset = record_reader.read_record('test')
 
-# @tf.function
+@tf.function
 def train_step(input, labels):
     with tf.GradientTape() as tape:
         tape.watch(model.trainable_variables)
         prediction = model(input, training=True)
-        clf_loss, box_loss = p.loss_fn(labels, prediction)
-        loss = clf_loss * 3 + box_loss
+        loss = p.loss_fn(labels, prediction)
+        # loss = clf_loss + box_loss
 
     gradients = tape.gradient(loss, model.trainable_variables)
 
@@ -41,16 +41,16 @@ def train_step(input, labels):
     p.optimizer.apply_gradients(zip(clipped_gradients, model.trainable_variables))
 
 
-# @tf.function
+@tf.function
 def test(dataset, metric1, metric2, sum_metric):
 
     for i, (image, label) in enumerate(dataset):
         if i >= 50: break
         prediction = model(image, training=False)
-        clf_loss, box_loss = p.loss_fn(label, prediction)
-        metric1(clf_loss)
-        metric2(box_loss)
-        sum_metric(clf_loss + box_loss)
+        loss = p.loss_fn(label, prediction)
+        # metric1(clf_loss)
+        # metric2(box_loss)
+        sum_metric(loss)
 
 file_writer = tf.summary.create_file_writer(p.model_dir + "/metrics")
 file_writer.set_as_default()

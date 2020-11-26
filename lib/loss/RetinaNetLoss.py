@@ -7,7 +7,7 @@ class RetinaNetLoss(tf.losses.Loss):
     """Wrapper to combine both the losses"""
 
     def __init__(self, num_classes=80, alpha=0.25, gamma=2.0, delta=1.0):
-        super(RetinaNetLoss, self).__init__(reduction=tf.keras.losses.Reduction.NONE, name="RetinaNetLoss")
+        super(RetinaNetLoss, self).__init__(reduction="auto", name="RetinaNetLoss")
         self._clf_loss = RetinaNetClassificationLoss(alpha, gamma)
         self._box_loss = RetinaNetBoxLoss(delta)
         self._num_classes = num_classes
@@ -31,11 +31,5 @@ class RetinaNetLoss(tf.losses.Loss):
         normalizer = tf.reduce_sum(positive_mask, axis=-1)
         clf_loss = tf.math.divide_no_nan(tf.reduce_sum(clf_loss, axis=-1), normalizer)
         box_loss = tf.math.divide_no_nan(tf.reduce_sum(box_loss, axis=-1), normalizer)
-
-        clf_loss = tf.reduce_mean(clf_loss)
-        box_loss = tf.reduce_mean(box_loss)
-
-        return clf_loss, box_loss
-
-        # loss = clf_loss + box_loss
-        # return loss
+        loss = clf_loss + box_loss
+        return loss
