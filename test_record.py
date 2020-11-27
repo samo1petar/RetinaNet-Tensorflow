@@ -13,7 +13,7 @@ This script is for visualizing records for better understanding what the network
 '''
 
 
-def test(
+def test_record(
         split: str,
         record_dir: str,
         record_name: str,
@@ -89,7 +89,7 @@ def parseargs():
 if __name__ == '__main__':
 
     args = parseargs()
-    test(
+    test_record(
         split                  = args.split.lower(),
         record_dir             = args.record_dir,
         record_name            = args.record_name,
