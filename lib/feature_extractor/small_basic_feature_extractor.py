@@ -9,7 +9,7 @@ class SmallBasicFE(tf.keras.layers.Layer):
             M : int = 1,
     ):
         super(SmallBasicFE, self).__init__(name=name)
-
+        # define layers
         self.c1 = ConvBnAct(8 * M, 3, stride = 2, name='conv_1') # 192 x 256
         self.c2 = ConvBnAct(8 * M, 3, name='conv_2')
         self.p1 = MaxPool(name='pool_1') # 96 x 128
@@ -26,7 +26,7 @@ class SmallBasicFE(tf.keras.layers.Layer):
         self.c10= ConvBnAct(32, 3, name='conv_10')
 
     def call(self, inputs: tf.Tensor, training: bool = False):
-
+        # connect layers
         x = inputs
 
         x = self.c1(x, training=training)
