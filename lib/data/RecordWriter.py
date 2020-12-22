@@ -7,90 +7,94 @@ import tensorflow as tf
 from typing import Dict, Generator, List, Union
 
 from lib.tools.progress_bar import printProgressBar
-from lib.data.hippo_classes import cls_ids
+from lib.data.classes import cls_ids
+from lib.tools.annotation import bs_from_xml, objects_from_bs
 
+from IPython import embed # TODO remove
 
 class RecordWriter:
-    """
-    Write record with all the data. The record is a file with all the images and annotations in such a format that
-    tensorflow likes. In that way, training is extra fast. No need for image loading and preprocessing.
-    RecordWriterHippo creates that records. It creates 80:20 split for train and test sets.
-    Creating records takes time, so it's only done once.  Once the records are created it won't create another one
-    with the same name.
-    Params:
-    record_dir          : string -> directory where you want to save records
-    record_name         : string -> record name
-    annotations         : string -> path to file with annotations TODO [example link]
-    save_n_test_images  : integer -> up to how many images will be saved in test set, if None -> use all the images
-    save_n_train_images : integer -> up to how many images will be saved in train set, if None -> use all the images
-    """
+
     def __init__(
             self,
+            dataset             : str,
+            annotations         : str,
             record_dir          : str,
             record_name         : str,
-            annotations         : str,
             save_n_test_images  : int,
             save_n_train_images : int,
+            train_percentage    : float = 0.8,
     ):
-        # check if record_dir exists
-        assert os.path.exists(record_dir)
-        # load annotations
-        with open(annotations) as f:
-            self._annotations = json.load(f)
+        assert os.path.exists(dataset)
+        assert os.path.exists(annotations)
+
+        if not os.path.exists(record_dir):
+            os.makedirs(record_dir)
 
         self._record_dir  = record_dir
         self._record_name = record_name
-        # create train and test record full paths
+
         self._train_record = os.path.join(self._record_dir, self._record_name + '_train' + '.tfrecord')
         self._test_record  = os.path.join(self._record_dir, self._record_name + '_test' + '.tfrecord')
-        # get data keys. Keys uniquely identify the images
-        keys = list(self._annotations.keys())
-        # shuffle the keys
-        shuffle(keys)
-        # creaate train-test key-only split 80:20
-        train_keys = keys[:int(0.8 * len(keys))]
-        test_keys  = keys[int(0.8 * len(keys)):]
-        # create train-test split with all data from annotations
-        train_dataset = {key: value for key, value in self._annotations.items() if key in train_keys}
-        test_dataset = {key: value for key, value in self._annotations.items() if key in test_keys}
-        # if test record not created -> create it
+
+        keys = {x.rsplit('.', 1)[0] for x in os.listdir(annotations)}
+        data = {x.rsplit('.', 1)[0]: {
+            'image': os.path.join(dataset, x),
+            'annotation': os.path.join(annotations, x.rsplit('.', 1)[0] + '.xml'),
+        }  for x in os.listdir(dataset) if x.rsplit('.', 1)[0] in keys}
+
+        data_keys = list(data.keys())
+
+        shuffle(data_keys)
+
+        train_keys = data_keys[:int(train_percentage * len(data_keys))]
+        test_keys  = data_keys[int(train_percentage * len(data_keys)):]
+
+        train_dataset = {key: value for key, value in data.items() if key in train_keys}
+        test_dataset  = {key: value for key, value in data.items() if key in test_keys}
+
         if not os.path.exists(self._test_record):
             self.create_record(test_dataset, self._test_record, save_n_test_images)
-        # if train record not created -> create it
+
         if not os.path.exists(self._train_record):
             self.create_record(train_dataset, self._train_record, save_n_train_images)
 
     def get_next(self, dataset: Dict, max) -> Generator[List[Union[str, str, bytes]], None, None]:
-        """
-        get_next is being called from create_record(). It's a function where the data is being loaded.
-        Image is loaded here, bounding boxes are loaded here and some preprocessing is also done here.
-        Once the data gets to the record, it's fixed there. Meaning, if you want to remove certain image or
-        change some small thing, you can't. You need to recreate the record.
-        """
-        for i, (key, annotation) in enumerate(dataset.items()):
-            if max is not None and i >= max:
-                break
-            # read the image
-            image = cv2.imread(annotation['path'][0])
-            # resize. This is important to do because annotations won't fit if not resized exactly like this
-            if image.shape[1] > 900:
-                image = cv2.resize(image, (900, int(900 * image.shape[0] / image.shape[1])))
-            # encode image to string. This is how tensorflow writer can save an image to the record
-            image = cv2.imencode('.png', image)[1].tostring()
-            # get bounding boxes
-            quads = np.array(annotation['bbox']).reshape(-1, 4, 2)
-            # split bounding boxes and save to lists
-            bbox_x1 = quads[:, :, 0].min(axis=-1).tolist()
-            bbox_y1 = quads[:, :, 1].min(axis=-1).tolist()
-            bbox_x2 = quads[:, :, 0].max(axis=-1).tolist()
-            bbox_y2 = quads[:, :, 1].max(axis=-1).tolist()
-            # save classes to the list
-            if isinstance(annotation['class'], str):
-                annotation['class'] = [annotation['class']]
-            # get integer representations of the classes
-            class_ids = np.array([cls_ids[cls] for cls in annotation['class']]).astype(np.int64).tolist()
-            # yielf the results and go get another one
-            yield i, class_ids, bbox_x1, bbox_y1, bbox_x2, bbox_y2, image
+        try:
+            for i, (key, annotation) in enumerate(dataset.items()):
+                if max is not None and i >= max:
+                    break
+
+                if not os.path.exists(annotation['annotation']):
+                    yield i, None, None, None, None, None, None
+
+                class_ids = []
+                bboxes = []
+
+                for obj in objects_from_bs(bs_from_xml(annotation['annotation'])):
+                    class_ids.append(cls_ids[obj['cls']])
+                    bboxes.append(obj['bbox'])
+
+                bboxes = np.array(bboxes, dtype=np.float32).reshape(-1, 4)
+
+                image = cv2.imread(annotation['image'])
+
+                if image.shape[1] > 600:
+                    resize_ratio = 600. / image.shape[1]
+                    image = cv2.resize(image, (600, int(600 * image.shape[0] / image.shape[1])))
+
+                    bboxes *= resize_ratio
+
+                bbox_x1 = bboxes[:, 0].tolist()
+                bbox_y1 = bboxes[:, 1].tolist()
+                bbox_x2 = bboxes[:, 2].tolist()
+                bbox_y2 = bboxes[:, 3].tolist()
+
+                image = cv2.imencode('.png', image)[1].tostring()
+
+                yield i, class_ids, bbox_x1, bbox_y1, bbox_x2, bbox_y2, image
+        except Exception as e:
+            embed()
+            exit()
 
     def create_record(self, dataset: Dict, full_record_name: str, max: int) -> None:
         """
@@ -134,6 +138,8 @@ class RecordWriter:
                 num_iterate = len(dataset) if max is None else max
                 # start to loop through data
                 for i, class_ids, bbox_x1, bbox_y1, bbox_x2, bbox_y2, image in self.get_next(dataset, max):
+                    if image == None:
+                        continue
                     count += 1
                     # write the image and it's annotations to the record
                     write(i, class_ids, bbox_x1, bbox_y1, bbox_x2, bbox_y2, image, writer)

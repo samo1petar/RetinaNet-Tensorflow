@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 
 from lib.bbox import convert_to_corners
-from lib.data.hippo_classes import cls_ids
+from lib.data.classes import cls_ids
 from lib.data.RecordReader import RecordReader
 from lib.LabelEncoder import LabelEncoder
 from lib.visualize import visualize_detections

@@ -40,6 +40,7 @@ def objects_from_bs(bs_content: bs) -> List[Dict]:
 
     return objects
 
+
 def size_from_bs(bs_content: bs) -> Tuple[int, int]:
     size_xml = bs_content.annotation.find('size')
     width = int(size_xml.width.contents[0])

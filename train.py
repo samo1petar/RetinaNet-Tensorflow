@@ -87,8 +87,8 @@ def train():
         train_step(image, label)
         # every 1000 iteration evaluate test and train
         if i % 1000 == 0:
-            test_step(test_dataset, test_clf_loss, test_box_loss, test_loss)
-            test_step(train_dataset, train_clf_loss, train_box_loss, train_loss)
+            test_step(test_dataset, test_loss)
+            test_step(train_dataset, train_loss)
             # save average test and train loss
             tf.summary.scalar('test_loss', test_loss.result(), i)
             tf.summary.scalar('train_loss', train_loss.result(), i)

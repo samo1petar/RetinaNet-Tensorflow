@@ -10,28 +10,27 @@ from lib.loss.RetinaNetLoss import RetinaNetLoss
 from lib.model.RetinaNet import RetinaNet
 from lib.tools.time import get_time
 
-# all parameters for interacting with the train environment are here
+
 class Params:
-    # name of the directory where records will be stored
-    records = 'records'
-    # if new record will be created, give it unique name
-    record_name = 'hippo'
-    # experiment dir name, must be unique so it saves the exact time when train is being initiated
-    model_dir = 'models/' + get_time()
-    # label encoder is used for generating target bboxes and class ids during training
+
+    dataset = '/home/david/Projects/Retinus/dataset/images'
+    annotations = '/home/david/Projects/Retinus/dataset/annotations_all'
+
+    records = '/home/david/Projects/Retinus/dataset/records'
+    record_name = 'retinus_v2'
+
+    model_dir = '/home/david/Projects/Retinus/dataset/models/' + get_time() # TODO makedirs if not exists
+
     label_encoder = LabelEncoder()
-    # for Animals, num of classes is 12. This information is needed for model creation
-    num_classes = 12
-    # batch size
+
+    num_classes = 19
     batch_size = 4
-    # json file with all the data information
-    annotations = '/media/david/A/Datasets/PlayHippo/detections.json'
-    # RecordWriterHippo is a class where the records are being created. If the record with a given name `record_name`
-    #   already exists, it will not create new record. Train, test split is being done automatically.
+
     record_writer = RecordWriter(
+        dataset             = dataset,
+        annotations         = annotations,
         record_dir          = records,
         record_name         = record_name,
-        annotations         = annotations,
         save_n_test_images  = None,
         save_n_train_images = None,
     )
@@ -59,11 +58,11 @@ class Params:
         boundaries=learning_rate_boundaries, values=learning_rates
     )
     # define model backbone. Most of the model weights are here.
-    backbone = get_backbone()
+    backbone = get_backbone_MobileNet_v2()
     # define loss function
     loss_fn = RetinaNetLoss(num_classes)
     # create the model
-    model = RetinaNet(num_classes, backbone, feature_pyramid_channels=256, head_channels=256, head_depth=4)
+    model = RetinaNet(num_classes, backbone, feature_pyramid_channels=32, head_channels=32, head_depth=4)
     # define optimizer. In this case Gradient descent with momentum is used.
     optimizer = tf.optimizers.SGD(learning_rate=learning_rate_fn, momentum=0.9)
     # compile the model. Here, everything gets glue up.
